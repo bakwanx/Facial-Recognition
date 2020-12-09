@@ -102,13 +102,12 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 img = handles.data1;
 
-%outputfolder = fullfile('dataset');
+
 rootfolder = fullfile('dataset');
-categories = {'bella','farhan','rozan','dimas','maudy','yabes','dita'};%deklarasi categories
-imds = imageDatastore(fullfile(rootfolder, categories), 'LabelSource', 'foldernames');%membuat categori dari nama folder
+categories = {'bella','farhan','rozan','dimas','maudy','yabes','dita','fabyan'};
+imds = imageDatastore(fullfile(rootfolder, categories), 'LabelSource', 'foldernames');
 
-tbl = countEachLabel(imds);%menghitung file foto setiap folder dalam bentuk tabel
-
+tbl = countEachLabel(imds);
 
 bella = find(imds.Labels == 'bella', 1);
 farhan = find(imds.Labels == 'farhan', 1);
@@ -117,24 +116,24 @@ dimas = find(imds.Labels == 'dimas', 1);
 maudy = find(imds.Labels == 'maudy', 1);
 yabes = find(imds.Labels == 'yabes', 1);
 dita = find(imds.Labels == 'dita', 1);
+fabyan = find(imds.Labels == 'fabyan', 1);
 
 
-net = resnet50();%panggil fungsi resnet, tapi sebelumnya download dan install terlebih dahulu package resnet-50 di add ons
+net = resnet50();
 
+display(net.Layers(1)); 
+display(net.Layers(end)); 
+display(numel(net.Layers(end).ClassNames)); 
 
-display(net.Layers(1)); %inspect properti input layer
-display(net.Layers(end)); %inspect properti layer terakhir'
-display(numel(net.Layers(end).ClassNames)); % menghitung banyak class dalam network
-[trainingSet, testSet] = splitEachLabel(imds, 0.3, 'randomize'); %menggunakan 30% data untuk training, dan 70%untuk validation dan dipilih secara acak
+[trainingSet, testSet] = splitEachLabel(imds, 0.7, 'randomize');
 
-imageSize = net.Layers(1).InputSize; %ukuran yang ditentukan untuk ResNet50 
+imageSize = net.Layers(1).InputSize;
 augmentedTrainingSet = augmentedImageDatastore(imageSize, ...
-    trainingSet, 'ColorPreprocessing','gray2rgb');
+    trainingSet, 'ColorPreprocessing','gray2rgb'); 
 augmentedTestSet = augmentedImageDatastore(imageSize, ...
-    testSet, 'ColorPreprocessing','gray2rgb');
+    testSet, 'ColorPreprocessing','gray2rgb')
 
-w1 = net.Layers(2).Weights;
-w1 = mat2gray(w1);
+
 
 featureLayer = 'fc1000';
 trainingFeatures = activations(net,...
@@ -143,27 +142,21 @@ trainingFeatures = activations(net,...
 trainingLables = trainingSet.Labels;
 classifier = fitcecoc(trainingFeatures, trainingLables,...
     'Learner', 'Linear', 'Coding', 'onevsall', 'ObservationsIn', 'columns');
+
 testFeatures = activations(net,...
-    augmentedTestSet, featureLayer, 'MiniBatchSize', 32, 'OutputAs', 'columns');
-
-predictLabels = predict(classifier, testFeatures, 'ObservationsIn', 'columns'); %prediksi labels
-
-testLables = testSet.Labels;%actual labels
-confMat = confusionmat(testLables, predictLabels);%confusion matriks
+   augmentedTestSet, featureLayer, 'MiniBatchSize', 32, 'OutputAs', 'columns');
+predictLabels = predict(classifier, testFeatures, 'ObservationsIn', 'columns'); 
+testLables = testSet.Labels;
+confMat = confusionmat(testLables, predictLabels);
 confMat = bsxfun(@rdivide, confMat, sum(confMat,2));
 
-mean(diag(confMat));
 
-%memasukkan image yang ingin di klasifikasikan
+
 ds = augmentedImageDatastore(imageSize, ...
     img, 'ColorPreprocessing','gray2rgb');
-
 imageFeature = activations(net,...
     ds, featureLayer, 'MiniBatchSize', 32, 'OutputAs', 'columns');
-
 label = predict(classifier, imageFeature, 'ObservationsIn', 'columns');
-
-
 set(handles.edit1,'String',label) 
 
 
