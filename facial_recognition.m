@@ -121,10 +121,6 @@ fabyan = find(imds.Labels == 'fabyan', 1);
 
 net = resnet50();
 
-display(net.Layers(1)); 
-display(net.Layers(end)); 
-display(numel(net.Layers(end).ClassNames)); 
-
 [trainingSet, testSet] = splitEachLabel(imds, 0.7, 'randomize');
 
 imageSize = net.Layers(1).InputSize;
